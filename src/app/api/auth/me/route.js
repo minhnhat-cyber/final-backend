@@ -10,7 +10,6 @@ import { ObjectId } from "mongodb";
 
 export async function GET(request) {
   try {
-    // Check JWT cookie
     const user = verifyJWT(request);
 
     if (!user) {
@@ -30,9 +29,8 @@ export async function GET(request) {
       process.env.DB_NAME || "online_course"
     );
 
-    // Verify that the user still exists
     const currentUser = await db
-      .collection("users")
+      .collection("user")
       .findOne(
         { _id: new ObjectId(user.id) },
         {

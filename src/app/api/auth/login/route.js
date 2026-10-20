@@ -1,4 +1,3 @@
-//src/app/api/auth/logout/route.js
 
 import corsHeaders from "@/lib/cors";
 import { getClientPromise } from "@/lib/mongodb";
@@ -27,7 +26,8 @@ export async function POST(request) {
     }
 
     if (!JWT_SECRET) {
-      throw new Error("JWT_SECRET is not configured");
+      console.error("[LOGIN] JWT_SECRET_MISSING");
+      return errorResponse("Internal server error", 500);
     }
 
     const user = await checkUserCredentials(
@@ -42,7 +42,16 @@ export async function POST(request) {
       );
     }
 
-    const token = getJWTtoken(user);
+    const token = jwt.sign(
+      {
+        id: user._id.toString(),
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     const response = NextResponse.json(
       {
@@ -71,9 +80,11 @@ export async function POST(request) {
       maxAge: 60 * 60 * 24 * 7,
     });
 
+    console.log("[LOGIN] LOGIN_SUCCESS");
+
     return response;
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("[LOGIN] SERVER_ERROR:", error);
     return errorResponse("Internal server error", 500);
   }
 }
@@ -85,46 +96,51 @@ async function checkUserCredentials(username, password) {
     process.env.DB_NAME || "online_course"
   );
 
-  const user = await db.collection("users").findOne({
+  console.log(
+    "[LOGIN] Database:",
+    db.databaseName
+  );
+
+  const user = await db.collection("user").findOne({
     $or: [
-      { username: username },
+      { username },
       { email: username },
     ],
   });
+
+  // DEBUG 1: Check whether user exists
+  console.log("[LOGIN] User found:", !!user);
 
   if (!user) {
     return null;
   }
 
+  // DEBUG 2: Check bcrypt password
   const isValid = await bcrypt.compare(
     password,
     user.password
   );
 
+  console.log("[LOGIN] Password matches:", isValid);
+
   if (!isValid) {
     return null;
   }
 
-  if (!["Teacher", "Student"].includes(user.role)) {
+  // DEBUG 3: Check role
+  const validRole = ["Teacher", "Student"].includes(
+    user.role
+  );
+
+  console.log("[LOGIN] Role valid:", validRole);
+
+  if (!validRole) {
     return null;
   }
 
   return user;
 }
 
-function getJWTtoken(user) {
-  const payload = {
-    id: user._id.toString(),
-    username: user.username,
-    email: user.email,
-    role: user.role,
-  };
-
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: "7d",
-  });
-  
-}
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
