@@ -69,7 +69,7 @@ const validIds = studentIds
   .map((id) => new ObjectId(id));
 
 const students = await db
-  .collection("users")
+  .collection("user")
   .find({
     _id: { $in: validIds },
     role: "Student",

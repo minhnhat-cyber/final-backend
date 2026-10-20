@@ -29,7 +29,7 @@ export async function GET(request) {
       user.role === "Teacher" ? "Student" : "Teacher";
 
     const users = await db
-      .collection("users")
+      .collection("user")
       .find({ role: targetRole })
       .project({
         username: 1,

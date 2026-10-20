@@ -35,7 +35,7 @@ export async function GET(request, { params }) {
     );
 
     const targetUser = await db
-      .collection("users")
+      .collection("user")
       .findOne(
         { _id: new ObjectId(user_id) },
         {

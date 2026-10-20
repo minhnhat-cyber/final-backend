@@ -60,7 +60,7 @@ export async function GET(request) {
         .map((id) => new ObjectId(id));
 
       const teachers = await db
-        .collection("users")
+        .collection("user")
         .find({
           _id: { $in: validIds },
           role: "Teacher",
